@@ -1,0 +1,39 @@
+{
+  "name": "core.io-cache-redis",
+  "version": "0.0.0",
+  "description": "Redis cache module",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/bogota",
+    "dtest": "watch ./node_modules/.bin/bogota tests/",
+    "cover": "./node_modules/.bin/nyc npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goliatone/core.io-cache-redis.git"
+  },
+  "keywords": [
+    "core.io"
+  ],
+  "author": "goliatone <hello@goliatone.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goliatone/core.io-cache-redis/issues"
+  },
+  "homepage": "https://github.com/goliatone/core.io-cache-redis#readme",
+  "devDependencies": {
+    "bogota": "^2.0.4",
+    "ioredis-mock": "^5.2.0",
+    "nyc": "^10.3.2",
+    "proxyquire": "^1.7.11",
+    "sinon": "^7.3.2",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.11.0",
+    "tape-catch": "^1.0.6",
+    "watch": "^1.0.2"
+  },
+  "dependencies": {
+    "gextend": "*",
+    "ioredis": "^4.19.4"
+  }
+}
