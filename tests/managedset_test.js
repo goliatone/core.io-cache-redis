@@ -1,0 +1,145 @@
+'use strict';
+const test = require('tape');
+
+const ManagedSet = require('..').ManagedSet;
+
+const fixtures = {
+    createClient() {
+        const Redis = require('ioredis-mock');
+        return new Redis();
+    }
+};
+
+
+test('ManagedSet: we can add unique elements', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+    await set.add(1);
+    await set.add(2);
+    await set.add(2);
+
+    let size = await set.size();
+
+    t.equals(size, 2, 'We can get the right size');
+
+    t.end();
+});
+
+test('ManagedSet: we can clear all elements', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+
+    await set.add(1);
+    await set.add(2);
+
+    await set.clear();
+
+    let size = await set.size();
+
+    t.equals(size, 0, 'We can clear all elements');
+
+    t.end();
+});
+
+test('ManagedSet: we can delete an element', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+
+    await set.add(1);
+    await set.add(2);
+
+    await set.delete(1);
+
+    let size = await set.size();
+    let result = await set.has(1);
+
+    t.equals(size, 1, 'We can clear all elements');
+    t.equals(result, false, 'We can check if we have an element');
+
+    t.end();
+});
+
+test('ManagedSet: we can get entries', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+
+    await set.add(1);
+    await set.add(2);
+    await set.add(3);
+    await set.add(4);
+
+
+    let result = await set.entries();
+    result = result.sort();
+
+    let expected = [1, 2, 3, 4];
+
+    t.equals(result, expected, 'We can retrieve all elements');
+
+    t.end();
+});
+
+
+test('ManagedSet: we can forEach on all entries', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+
+    await set.add(1);
+    await set.add(2);
+    await set.add(3);
+    await set.add(4);
+
+    let result = [];
+    await set.forEach(v => result.push(v));
+
+    result = result.sort();
+
+    let expected = [1, 2, 3, 4];
+
+    t.equals(result, expected, 'We can retrieve all elements');
+
+    t.end();
+});
+
+
+test('ManagedSet: we can check if set contains an element', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+    await set.add(1);
+
+    let result = await set.has(1);
+
+    t.equals(result, true, 'We can check elements');
+
+    t.end();
+});
+
+
+test('ManagedSet: we can forEach on all entries', async t => {
+
+    let set = new ManagedSet('test', fixtures.createClient());
+
+    await set.add(1);
+    await set.add(2);
+    await set.add(3);
+    await set.add(4);
+    await set.add(5);
+    await set.add(6);
+    await set.add(7);
+    await set.add(8);
+    await set.add(9);
+    await set.add(0);
+
+    let result = 0;
+
+    const it = set.values();
+
+    for await (const element of it) {
+        result++;
+        t.ok(await set.has(element), 'set should contain element');
+    }
+
+    t.equals(result, 10, 'We can retrieve all elements');
+
+    t.end();
+});
