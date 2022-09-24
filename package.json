@@ -4,9 +4,9 @@
   "description": "Redis cache module",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/bogota",
-    "dtest": "watch ./node_modules/.bin/bogota tests/",
-    "cover": "./node_modules/.bin/nyc npm test"
+    "test": "tape ./tests/**.js | tap-spec",
+    "dtest": "watch 'npm test' ./tests",
+    "cover": "nyc npm test"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/goliatone/core.io-cache-redis#readme",
   "devDependencies": {
-    "bogota": "^2.0.4",
     "ioredis-mock": "^7.1.0",
     "nyc": "^15.1.0",
     "proxyquire": "^2.1.3",
