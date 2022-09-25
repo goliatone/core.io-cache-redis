@@ -2,6 +2,7 @@
 const test = require('tape');
 
 const CacheClient = require('..').CacheClient;
+const noopConsole = require('noop-console');
 
 const fixtures = {};
 
@@ -9,6 +10,7 @@ const fixtures = {};
 test('CacheClient: should handle custom serialization', t => {
 
     let client = new CacheClient({
+        logger: noopConsole(),
         createClient: function() {
             const Redis = require('ioredis-mock');
             return new Redis();
