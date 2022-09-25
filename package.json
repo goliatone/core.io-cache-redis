@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "tape ./tests/**.js | tap-spec",
-    "dtest": "watch 'npm test' ./tests",
+    "dtest": "watch 'npm test' .",
     "cover": "nyc npm test"
   },
   "repository": {
