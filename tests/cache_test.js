@@ -1,14 +1,205 @@
 'use strict';
 const test = require('tape');
-
+const sinon = require('sinon');
 const CacheClient = require('..').CacheClient;
 
 const fixtures = {};
 
+test('CacheClient: tryGet should use fallback when key not in cache', async t => {
+    const fallback = _ => expected
+    const expected = { user: 1, name: 'pepe' };
+    const key = '13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis();
+        }
+    });
+
+    const result = await client.tryGet(key, fallback, {
+        addTimestamp: false
+    });
+
+    t.equals(result, expected, `result is expected object`);
+    t.end();
+});
+
+test('CacheClient: tryGet should use cache when key is found', async t => {
+    const fallback = sinon.spy();
+    const expected = { user: 1, name: 'pepe' };
+    const key = '13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis({
+                data: {
+                    [`cache:${key}`]: expected
+                }
+            });
+        }
+    });
+
+    const result = await client.tryGet(key, fallback, {
+        addTimestamp: false
+    });
+
+    t.equals(result, expected, `result is expected object`);
+    t.ok(fallback.notCalled, 'fallback should not be called');
+
+    t.end();
+});
+
+test('CacheClient: get should return value', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis({
+                data: {
+                    [`cache:${key}`]: JSON.stringify(expected)
+                }
+            });
+        }
+    });
+
+    const result = await client.get(key);
+
+    t.deepEquals(result, expected, `result is expected object`);
+
+    t.end();
+});
+
+test('CacheClient: get should return value if we use full key', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = 'cache:13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis({
+                data: {
+                    [key]: JSON.stringify(expected)
+                }
+            });
+        }
+    });
+
+    const result = await client.get(key);
+
+    t.deepEquals(result, expected, `result is expected cached value`);
+
+    t.end();
+});
+
+test('CacheClient: "get" should return string if "deserialize" is `false`', async t => {
+    const expected = `{ user: 1, name: 'pepe' }`;
+    const key = '13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis({
+                data: {
+                    [`cache:${key}`]: expected
+                }
+            });
+        }
+    });
+
+    const result = await client.get(key, undefined, false);
+
+    t.deepEquals(result, expected, `result is expected string`);
+
+    t.end();
+});
+
+test('CacheClient: "get" should return default value if key not found', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis({ data: {} });
+        }
+    });
+
+    const result = await client.get(key, expected);
+
+    t.deepEquals(result, expected, `result is expected object`);
+
+    t.end();
+});
+
+test('CacheClient: "set" should set a value we can retrieve with "get"', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = 'cache:13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis();
+        }
+    });
+
+    await client.set(key, expected);
+
+    const result = await client.get(key);
+
+    t.deepEquals(result, expected, `result is expected cached value`);
+
+    t.end();
+});
+
+test('CacheClient: "del" should delete a value', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = 'cache:13136b36-bbcf-4127-bb03-28038065e9ba';
+
+    const client = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis({
+                data: {
+                    [key]: JSON.stringify(expected)
+                }
+            });
+        }
+    });
+
+    let result = await client.get(key);
+
+    t.deepEquals(result, expected, `result is expected cached value`);
+
+    await client.del(key);
+
+    result = await client.get(key);
+
+    t.notOk(result, 'After delete we should not find key');
+
+    t.end();
+});
 
 test('CacheClient: isHashKey should identify valid cache keys using default pattern', t => {
 
-    let client = new CacheClient({
+    const client = new CacheClient({
         createClient: function() {
             const Redis = require('ioredis-mock');
             return new Redis();
@@ -46,10 +237,9 @@ test('CacheClient: isHashKey should identify valid cache keys using default patt
     t.end();
 });
 
-
 test('CacheClient: isHashKey should identify valid cache keys using custom pattern', t => {
 
-    let client = new CacheClient({
+    const client = new CacheClient({
         cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
         createClient: function() {
             const Redis = require('ioredis-mock');
@@ -94,10 +284,9 @@ test('CacheClient: isHashKey should identify valid cache keys using custom patte
     t.end();
 });
 
-
 test('CacheClient: hashKey should not hash UUIDs', t => {
 
-    let client = new CacheClient({
+    const client = new CacheClient({
         hashUUIDs: false,
         cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
         createClient: function() {
@@ -125,5 +314,33 @@ test('CacheClient: hashKey should not hash UUIDs', t => {
         t.equals(result, fixture.expected, `"${fixture.key}" = "${result}"`);
     });
 
+    t.end();
+});
+
+test('CacheClient: ttl in seconds use EX', t => {
+    const client = new CacheClient({
+        ttlInSeconds: true,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis();
+        }
+    });
+
+    const result = client.timeUnit;
+    t.equals(result, 'EX', `"EX" = "${result}"`);
+    t.end();
+});
+
+test('CacheClient: ttl in milliseconds use PX', t => {
+    const client = new CacheClient({
+        ttlInSeconds: false,
+        createClient: function() {
+            const Redis = require('ioredis-mock');
+            return new Redis();
+        }
+    });
+
+    const result = client.timeUnit;
+    t.equals(result, 'PX', `"PX" = "${result}"`);
     t.end();
 });
