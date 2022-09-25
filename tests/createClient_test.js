@@ -112,8 +112,6 @@ function setEnv(options = defaultOptions) {
     if (options.host) process.env.REDIS_HOST = options.host;
     if (options.password) process.env.REDIS_PASSWORD = options.password;
     if (options.tls) process.env.REDIS_TLS = options.tls;
-    console.log('setEnv url', options.url);
-    console.log('setEnv REDIS_URL', process.env.REDIS_URL);
 }
 
 function delEnv() {
