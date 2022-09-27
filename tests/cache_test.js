@@ -196,11 +196,10 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
         }
     });
 
-
     let expectedError;
 
     try {
-        await cache.tryGet(key, a => expected, {
+        await cache.tryGet(key, _ => expected, {
             timeout,
             addTimestamp: false,
         });
@@ -211,6 +210,40 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
     t.ok(expectedError, 'timeout should generate error');
     t.equals(expectedError.code, 408, 'error should have 408 code');
     t.ok(promiseTimeout.calledOnce, 'cache.promiseTimeout should have been called');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "tryGet" should handle "get" thrown errors', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '9111dbea-51cf-4d98-aae7-bb888610743d';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    const get = sinon.stub(cache, 'get');
+    get.rejects();
+
+    let expectedError;
+
+    try {
+        await cache.tryGet(key, _ => expected, {
+            throwOnError: true,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.ok(expectedError, 'get should generate error');
+    t.ok(get.calledOnce, 'cache.get should have been called');
 
     await cache.client.flushall();
 
