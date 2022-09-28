@@ -15,6 +15,7 @@
   "keywords": [
     "core.io"
   ],
+  "types": "./types/index.d.ts",
   "author": "goliatone <hello@goliatone.com>",
   "license": "MIT",
   "bugs": {
