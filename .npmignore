@@ -68,18 +68,20 @@ node_modules
 .travis.yml
 .documentation
 .envset
-.env 
+.env
 docs/*
 Gruntfile.js
 .git/index
 .jshintrc
-TODO.md 
-.git 
+TODO.md
+.git
 .nyc_output/*
 .vscode
+.tmp/*
+.github/*
 
 xdocs/*
 _site/*
 _documentation/*
-_docs.md 
+_docs.md
 output.md
