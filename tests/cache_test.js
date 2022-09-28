@@ -286,7 +286,6 @@ test('CacheClient: "tryGet" should call "promiseTimeout" if timeout is set', asy
     t.end();
 });
 
-
 test('CacheClient: "get" should return value', async t => {
     const expected = { user: 1, name: 'pepe' };
     const key = '90dc29f8-027b-4fec-a011-ab07af159f5b';
@@ -380,7 +379,69 @@ test('CacheClient: "get" should return default value if key not found', async t 
 
     const result = await cache.get(key, expected);
 
-    t.deepEquals(result, expected, `result is expected object`);
+    t.deepEquals(result, expected, `result is default value object`);
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "get" should handle deserialize boolean values', async t => {
+    const expectedObject = { user: 1, name: 'pepe' };
+    const expected = JSON.stringify(expectedObject);
+    const key = '872e3fc6-a9b3-4412-a25f-0750bf14ab10';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis({
+                data: {
+                    [`cache:${key}`]: expected
+                }
+            });
+        }
+    });
+
+    let result = await cache.get(key, undefined, false);
+
+    t.deepEquals(result, expected, `result should be string`);
+
+    result = await cache.get(key, undefined, true);
+
+    t.deepEquals(result, expectedObject, `result should be object`);
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "get" should handle deserialize as object values', async t => {
+    const expectedObject = { user: 1, name: 'pepe' };
+    const expected = JSON.stringify(expectedObject);
+    const key = '872e3fc6-a9b3-4412-a25f-0750bf14ab10';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis({
+                data: {
+                    [`cache:${key}`]: expected
+                }
+            });
+        }
+    });
+
+    let result = await cache.get(key, undefined, { deserialize: false });
+
+    t.deepEquals(result, expected, `result should be string`);
+
+    result = await cache.get(key, undefined, { deserialize: true });
+
+    t.deepEquals(result, expectedObject, `result should be object`);
 
     await cache.client.flushall();
 
@@ -462,6 +523,81 @@ test('CacheClient: "set" should use given TTL argument', async t => {
     });
 
     await cache.set(key, expected, argTTL);
+});
+
+test('CacheClient: "get" and "set" should handle custom serialize and deserialize functions', async t => {
+
+    const expected = { user: 1, name: 'pepe' };
+    const key = '872e3fc6-a9b3-4412-a25f-0750bf14ab10';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis({
+                data: {}
+            });
+        }
+    });
+
+    await cache.set(key, expected, {
+        serialize: record => {
+            //eyJ1c2VyIjoxLCJuYW1lIjoicGVwZSJ9
+            return Buffer.from(JSON.stringify(record)).toString('base64');
+        }
+    });
+
+    let result = await cache.get(key, undefined, {
+        deserialize: raw => {
+            return JSON.parse(Buffer.from(raw, 'base64').toString());
+        }
+    });
+
+    t.deepEquals(result, expected, `result should be object`);
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "get" and "set" should handle buffer data', async t => {
+
+    const expected = { user: 1, name: 'pepe' };
+    const bufferData = Buffer.from(JSON.stringify(expected));
+
+    const key = '872e3fc6-a9b3-4412-a25f-0750bf14ab10';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis({
+                data: {}
+            });
+        }
+    });
+
+    await cache.set(key, bufferData);
+
+    /**
+     * NOTE: ioredis-mock behavior for `getBuffer`
+     * seem broken. `set` stores an object with
+     * type and data attributes and `getBuffer`
+     * does not decode as it should
+     */
+    cache.client.getBuffer = _ => bufferData;
+
+    let result = await cache.get(key, undefined, {
+        buffer: true
+    });
+
+    t.deepEquals(result, expected, `result should be object`);
+
+    await cache.client.flushall();
+
+    t.end();
 });
 
 test('CacheClient: "del" should delete a value', async t => {
