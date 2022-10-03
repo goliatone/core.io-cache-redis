@@ -1,7 +1,7 @@
 'use strict';
 const test = require('tape');
 const sinon = require('sinon');
-const CacheClient = require('..').CacheClient;
+const { CacheClient, CacheClientError } = require('..');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
 
@@ -196,6 +196,8 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
         }
     });
 
+    const handleError = sinon.stub(cache, 'handleError');
+
     let expectedError;
 
     try {
@@ -210,6 +212,46 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
     t.ok(expectedError, 'timeout should generate error');
     t.equals(expectedError.code, 408, 'error should have 408 code');
     t.ok(promiseTimeout.calledOnce, 'cache.promiseTimeout should have been called');
+    t.ok(handleError.calledOnce, 'cache.handleError should have been called');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "tryGet" should return errors if `throwOnError=false`', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = 'd768cd7e-e95f-4675-b561-1c4923293d08';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    const actualError = new Error();
+
+    const fallback = sinon.stub();
+    fallback.throws(actualError);
+
+    let expectedError, result;
+
+    try {
+        result = await cache.tryGet(key, fallback, {
+            throwOnError: false,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.notOk(expectedError, 'should not throw error');
+    t.ok(fallback.calledOnce, 'fallback should have been called');
+    t.ok(result, 'should return a value');
+    t.ok(result.$error, 'should return error');
+    t.equals(result.$error, actualError, 'should return error');
 
     await cache.client.flushall();
 
@@ -232,6 +274,8 @@ test('CacheClient: "tryGet" should handle "get" thrown errors', async t => {
     const get = sinon.stub(cache, 'get');
     get.rejects();
 
+    const handleError = sinon.stub(cache, 'handleError');
+
     let expectedError;
 
     try {
@@ -244,6 +288,7 @@ test('CacheClient: "tryGet" should handle "get" thrown errors', async t => {
 
     t.ok(expectedError, 'get should generate error');
     t.ok(get.calledOnce, 'cache.get should have been called');
+    t.ok(handleError.calledOnce, 'cache.handleError should have been called');
 
     await cache.client.flushall();
 
@@ -776,5 +821,176 @@ test('CacheClient: ttl in milliseconds use PX', t => {
 
     const result = cache.timeUnit;
     t.equals(result, 'PX', `"PX" = "${result}"`);
+    t.end();
+});
+
+test('CacheClient: "get" errors should be handled by "handleError"', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '9111dbea-51cf-4d98-aae7-bb888610743d';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    const get = sinon.stub(cache, 'get');
+    get.rejects();
+
+    const handleError = sinon.spy(cache, 'handleError');
+
+    let expectedError;
+
+    try {
+        await cache.tryGet(key, _ => expected, {
+            throwOnError: true,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.ok(handleError.calledOnce, 'cache.handleError should have been called');
+    t.ok(handleError.calledWith(expectedError), 'cache.handleError called with error');
+    t.deepEquals(cache.lastError, expectedError, 'cache stores last error');
+    t.equals(cache.errors.length, 1, 'should store errors in array');
+
+    await cache.client.flushall();
+    handleError.restore();
+
+    t.end();
+});
+
+test('CacheClient: "set" errors should be handled by "handleError"', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '9111dbea-51cf-4d98-aae7-bb888610743d';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    const set = sinon.stub(cache, 'set');
+    set.rejects();
+
+    const handleError = sinon.spy(cache, 'handleError');
+
+    let expectedError;
+
+    try {
+        await cache.tryGet(key, _ => expected, {
+            throwOnError: true,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.ok(handleError.calledOnce, 'cache.handleError should have been called');
+    t.ok(handleError.calledWith(expectedError), 'cache.handleError called with error');
+    t.deepEquals(cache.lastError, expectedError, 'cache stores last error');
+    t.equals(cache.errors.length, 1, 'should store errors in array');
+
+    await cache.client.flushall();
+    handleError.restore();
+
+    t.end();
+});
+
+test('CacheClient: `throwOnError=false` should return error value', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '9111dbea-51cf-4d98-aae7-bb888610743d';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    const actualError = new Error();
+
+    const set = sinon.stub(cache, 'set');
+    set.rejects(actualError);
+
+    let expectedError, result;
+
+    try {
+        result = await cache.tryGet(key, _ => expected, {
+            throwOnError: false,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.notOk(expectedError, 'should not throw an error');
+    t.ok(result, 'should return a value');
+    t.ok(result.$error, 'should return error');
+    t.equals(result.$error, actualError, 'should return error');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: `testConnection` should throw error if we fail to connect', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '9111dbea-51cf-4d98-aae7-bb888610743d';
+
+    const cache = new CacheClient({
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    const delay = t => new Promise(resolve => setTimeout(resolve, t));
+    cache.client.ping = _ => delay(500);
+
+    let expectedError;
+
+    try {
+        await cache.testConnection(5);
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.ok(expectedError, 'should throw an error on timeout');
+    t.ok(expectedError instanceof CacheClientError, 'should throw CacheClientError');
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: `testConnection` should not throw error if we fail to connect', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '9111dbea-51cf-4d98-aae7-bb888610743d';
+
+    const cache = new CacheClient({
+        logger: noopConsole(),
+        createClient: function() {
+            return new Redis();
+        }
+    });
+
+    let expectedError;
+
+    try {
+        await cache.testConnection(500);
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.notOk(expectedError, 'should not throw an error on timeout');
+
+    await cache.client.flushall();
+
     t.end();
 });
