@@ -333,7 +333,6 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
 });
 
 test('CacheClient: "tryGet" should return errors if `throwOnError=false`', async t => {
-    const expected = { user: 1, name: 'pepe' };
     const key = 'd768cd7e-e95f-4675-b561-1c4923293d08';
 
     const cache = new CacheClient({
@@ -671,6 +670,34 @@ test('CacheClient: "set" should use given TTL argument', async t => {
     await cache.set(key, expected, argTTL);
 });
 
+test('CacheClient: "set" should use "serialize" function for object values', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = 'cache:7e2b336f-a2db-4249-a2ea-164acc3a8b56';
+    const argTTL = 100;
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    const set = sinon.stub(cache.client, 'set');
+    const serialize = sinon.spy(cache, 'serialize');
+
+    set.callsFake(async(key, value, unit, ttl) => {
+        t.equals(ttl, argTTL, 'should be called with TTL argument');
+        t.ok(serialize.calledOnce, 'should deserialize object');
+        set.restore();
+
+        await cache.client.flushall();
+
+        t.end();
+    });
+
+    await cache.set(key, expected, argTTL);
+});
+
 test('CacheClient: "get" and "set" should handle custom serialize and deserialize functions', async t => {
 
     const expected = { user: 1, name: 'pepe' };
@@ -815,6 +842,47 @@ test('CacheClient: isHashKey should identify valid cache keys using default patt
     t.end();
 });
 
+test('CacheClient: isHashKey should use keySerializer for non string keys', t => {
+
+    const keySerializer = obj => obj.id;
+
+    const cache = new CacheClient({
+        keySerializer,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    let keys = [{
+        keyObject: { id: 'adfadfa' },
+        expected: false,
+    }, {
+        keyObject: { id: '0c19caba-aad2-4e64-b644-a2a546528912' },
+        expected: false
+    }, {
+        keyObject: { id: 'cache:0c19caba-aad2-4e64-b644-a2a546528912' },
+        expected: false
+    }, {
+        keyObject: { id: 'cache:cfe599a8705981bc9d8cf136591' },
+        expected: false
+    }, {
+        keyObject: { id: 'cache:cfe599a8705981bc9d8cf136591e66bf' },
+        expected: true
+    }, {
+        keyObject: { id: 'cache:4f56edcb1558d4df2f77295f86059006' },
+        expected: true
+    }, {
+        keyObject: { id: 'cache:4F56EDCB1558D4DF2F77295F86059006' },
+        expected: true
+    }];
+
+    keys.forEach(fixture => {
+        const result = cache.isHashKey(fixture.keyObject);
+        t.equals(result, fixture.expected, `is "${fixture.keyObject.id}" a hash hey? ${result}`);
+    });
+
+    t.end();
+});
+
 test('CacheClient: isHashKey should identify valid cache keys using custom pattern', t => {
 
     const cache = new CacheClient({
@@ -886,6 +954,68 @@ test('CacheClient: hashKey should not hash UUIDs', t => {
     keys.forEach(fixture => {
         const result = cache.hashKey(fixture.key);
         t.equals(result, fixture.expected, `"${fixture.key}" = "${result}"`);
+    });
+
+    t.end();
+});
+
+test('CacheClient: hashKey should not hash keys if hashKeys is false', t => {
+
+    const cache = new CacheClient({
+        hashKeys: false,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    let keys = [{
+        key: 'adfadfa',
+        expected: 'adfadfa',
+    }, {
+        key: '0c19caba-aad2-4e64-b644-a2a546528912',
+        expected: '0c19caba-aad2-4e64-b644-a2a546528912'
+    }, {
+        key: '0c19caba-aad2-4e64-b644-a2a546528912',
+        expected: '0c19caba-aad2-4e64-b644-a2a546528912'
+    }, {
+        key: 'sample-raw-key',
+        expected: 'sample-raw-key'
+    }];
+
+    keys.forEach(fixture => {
+        const result = cache.hashKey(fixture.key);
+        t.equals(result, fixture.expected, `"${fixture.key}" = "${result}"`);
+    });
+
+    t.end();
+});
+
+test('CacheClient: hashKey should call "keySerializer" if key is not string', t => {
+    const keySerializer = o => o.id;
+
+    const cache = new CacheClient({
+        keySerializer,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    let keys = [{
+        key: { id: 'adfadfa' },
+        expected: 'cache:9c9003d48dc9a1ee2bd97749db6c7cc7',
+    }, {
+        key: { id: '0c19caba-aad2-4e64-b644-a2a546528912' },
+        expected: 'cache:5912e5637aa512a20cce8ed0ad43ef6a'
+    }, {
+        key: { id: 'cache:43d380b9ba948d74b19e4b7164e057a1' },
+        expected: 'cache:43d380b9ba948d74b19e4b7164e057a1'
+    }, {
+        key: { id: 'sample-raw-key' },
+        expected: 'cache:69d9380fbea522ce22fa5bc88be74a8a'
+    }];
+
+
+    keys.forEach(fixture => {
+        const result = cache.hashKey(fixture.key);
+        t.equals(result, fixture.expected, `"${fixture.key.id}" = "${result}"`);
     });
 
     t.end();
