@@ -240,6 +240,132 @@ test('CacheClientBatch: "tryGetBatch" should return keys from cache', async t =>
     t.end();
 });
 
+test('CacheClientBatch: "setBatch" should serialize all values', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        createClient: () => new Redis()
+    });
+
+    const keys = [key1, key2, key3];
+    const users = [user1, user2, user3];
+
+    const expected = {
+        [`cache:${key1}`]: user1,
+        [`cache:${key2}`]: user2,
+        [`cache:${key3}`]: user3,
+    };
+
+    const setCalled = {};
+    const fakeMulti = {
+        set(key, value) {
+            setCalled[key] = value;
+        },
+        exec() {},
+    };
+
+    const exec = sinon.stub(fakeMulti, 'exec');
+
+    const multi = sinon.stub(cache.client, 'multi');
+    multi.returns(fakeMulti);
+
+    const serialize = sinon.spy(cache, 'serialize');
+
+    await cache.setBatch(keys, users);
+
+    for (const key of keys) {
+        t.deepEquals(setCalled[key], expected[key], `key ${key}`);
+    }
+
+    t.ok(exec.calledOnce, 'commit transaction');
+    t.ok(serialize.callCount === keys.length, 'serialize values');
+
+    serialize.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "setBatch" should use custom serialize', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        createClient: () => new Redis()
+    });
+
+    const keys = [key1, key2, key3];
+    const users = [user1, user2, user3];
+
+    const serialize = sinon.stub(cache, 'serialize');
+    serialize.callsFake(value => JSON.stringify(value));
+
+    await cache.setBatch(keys, users);
+
+    t.ok(serialize.callCount === keys.length, 'serialize values');
+
+    serialize.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "setBatch" should throw if invalid arguments', async t => {
+    const cache = new CacheClientBatch({
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    try {
+        cache.setBatch();
+    } catch (error) {
+        t.ok(error, 'should throw with invalid arguments');
+    }
+
+    try {
+        cache.setBatch('key');
+    } catch (error) {
+        t.ok(error, 'should throw with invalid arguments');
+    }
+
+    try {
+        cache.setBatch(['key'], 'value');
+    } catch (error) {
+        t.ok(error, 'should throw with invalid arguments');
+    }
+
+    let expectedError;
+    try {
+        cache.setBatch(['key'], ['value']);
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.notOk(expectedError, 'should not throw with ok arguments');
+
+    await cache.client.flushall();
+
+    t.end();
+});
 
 test('CacheClientBatch: "delBatch" should delete batch of keys', async t => {
     const user1 = { user: 1, name: 'user1' };
