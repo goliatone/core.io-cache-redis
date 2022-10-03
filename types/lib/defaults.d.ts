@@ -25,30 +25,14 @@ export namespace defaults {
         const showFriendlyErrorStack: boolean;
     }
     /**
-     * Promise with a timeout implementation.
-     */
-    /**
-     * Stringify raw key objects.
-     * @param {Object} obj Raw key
-     * @returns {string} Serialized key
-     */
-    export function keySerializer(obj: any): string;
-    /**
-     * Promise with a timeout implementation.
-     */
-    /**
      * Stringify raw key objects.
      * @param {Object} obj Raw key
      * @returns {string} Serialized key
      */
     export function keySerializer(obj: any): string;
     export function keyHashFunction(key: any): any;
-    export function keyHashFunction(key: any): any;
-    export function serialize(obj: any): string;
     export function serialize(obj: any): string;
     export function deserialize(value: any): any;
-    export function deserialize(value: any): any;
-    export function makeTimestamp(value: any, addTimestamp: any): any;
     export function makeTimestamp(value: any, addTimestamp: any): any;
     /**
      * If `strict` is true then we use a
