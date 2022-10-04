@@ -5,8 +5,6 @@ const { CacheClient, CacheClientError } = require('..');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
 
-const fixtures = {};
-
 test('CacheClient: "tryGet" should use fallback when key not in cache', async t => {
     const expected = { user: 1, name: 'pepe' };
     const key = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
@@ -322,10 +320,123 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
         expectedError = error;
     }
 
-    t.ok(expectedError, 'timeout should generate error');
+    t.ok(expectedError instanceof CacheClientError, 'timeout should throw error');
     t.equals(expectedError.code, 408, 'error should have 408 code');
     t.ok(promiseTimeout.calledOnce, 'cache.promiseTimeout should have been called');
     t.ok(handleError.calledOnce, 'cache.handleError should have been called');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "tryGet" should handle "get" thrown errors', async t => {
+    const key = 'd768cd7e-e95f-4675-b561-1c4923293d08';
+    const timeout = 1000;
+
+    const expected = new Error();
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    const get = sinon.stub(cache.client, 'get');
+    get.throws(expected);
+
+    const handleError = sinon.stub(cache, 'handleError');
+
+    let expectedError;
+
+    try {
+        await cache.tryGet(key, _ => undefined, {
+            timeout,
+            throwOnError: true,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.equals(expectedError, expected, 'timeout should throw error');
+    t.ok(get.calledOnce, 'cache.promiseTimeout should have been called');
+    t.ok(handleError.calledOnce, 'cache.handleError should have been called');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "tryGet" should handle "get" returned errors', async t => {
+    const key = 'd768cd7e-e95f-4675-b561-1c4923293d08';
+    const timeout = 1000;
+
+    const expected = new Error();
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    const get = sinon.stub(cache.client, 'get');
+    get.throws(expected);
+
+    const handleError = sinon.stub(cache, 'handleError');
+
+    let expectedError, result;
+
+    try {
+        result = await cache.tryGet(key, _ => undefined, {
+            timeout,
+            throwOnError: false,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.equals(expectedError, undefined, 'timeout should not throw error');
+    t.equals(result.$error, expected, 'timeout should return error');
+    t.ok(get.calledOnce, 'cache.promiseTimeout should have been called');
+    t.ok(handleError.calledOnce, 'cache.handleError should have been called');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClient: "tryGet" "promiseTimeout" should throw errors if throwOnError true', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = 'd768cd7e-e95f-4675-b561-1c4923293d08';
+    const timeout = 1000;
+
+    const promiseTimeout = sinon.stub();
+    promiseTimeout.throws(new CacheClientError('test', 500));
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        promiseTimeout,
+        createClient: () => new Redis()
+    });
+
+    let expectedError, result;
+
+    try {
+        result = await cache.tryGet(key, _ => expected, {
+            timeout,
+            throwOnError: true,
+        });
+    } catch (error) {
+        expectedError = error;
+    }
+
+    t.ok(expectedError instanceof CacheClientError, 'timeout should throw error');
+    t.equals(expectedError.code, 500, 'error should have 500 code');
+    t.notOk(result, 'result should be undefined');
 
     await cache.client.flushall();
 

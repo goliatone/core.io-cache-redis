@@ -1,9 +1,7 @@
 'use strict';
 const test = require('tape');
-
-const createClient = require('..').createClient;
-
-const fixtures = {};
+const proxyquire = require("proxyquire");
+const { createClient } = proxyquire('..', { ioredis: require('ioredis-mock') });
 
 test('createClient: should use config.url', t => {
     const defaultURL = 'redis://localhost:6379';
@@ -34,6 +32,23 @@ test('createClient: should use process.env.REDIS_URL', t => {
     t.end();
 });
 
+test('createClient: should return a valid redis client', t => {
+    setEnv(merge({}));
+
+    const client = createClient({
+        url: ''
+    });
+
+    t.ok(typeof client.get === 'function', 'should have get');
+    t.ok(typeof client.getBuffer === 'function', 'should have getBuffer');
+    t.ok(typeof client.set === 'function', 'should have set');
+    t.ok(typeof client.mget === 'function', 'should have mget');
+
+    delEnv();
+    client.disconnect();
+
+    t.end();
+});
 
 test('createClient: should use process.env options', t => {
     const defaultURL = 'rediss://127.0.0.0:3333';
