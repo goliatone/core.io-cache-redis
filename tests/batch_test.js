@@ -83,6 +83,137 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for keys not in cache', 
     t.end();
 });
 
+test('CacheClientBatch: "tryGetBatch" should use "promiseTimeout" if timeout is set', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        createClient: () => new Redis()
+    });
+
+    const keys = [key1, key2, key3];
+    const expected = [user1, user2, user3];
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const promiseTimeout = sinon.spy(cache, 'promiseTimeout');
+
+    const result = await cache.tryGetBatch(keys, fallback, {
+        timeout: 1000,
+    });
+
+    t.deepEquals(result, expected, `result is expected object`);
+    t.ok(fallback.calledOnce, 'fallback should have been called once');
+    t.ok(fallback.calledWith(keys), 'fallback should have been with raw key');
+    t.ok(promiseTimeout.calledOnce, 'promise timeout should have been called');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" should use "promiseTimeout" should throw 408', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        createClient: () => new Redis()
+    });
+
+    const keys = [key1, key2, key3];
+    const expected = [user1, user2, user3];
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const promiseTimeout = sinon.stub(cache, 'promiseTimeout');
+    promiseTimeout.throws({ code: 500 });
+
+    let result, actualError;
+
+    try {
+        result = await cache.tryGetBatch(keys, fallback, {
+            timeout: 1000,
+            throwOnError: true,
+        });
+    } catch (error) {
+        actualError = error;
+    }
+
+    t.notOk(result, `result is undefined`);
+    t.ok(actualError, 'promiseTimeout should throw');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" should use "promiseTimeout" return error value', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        createClient: () => new Redis()
+    });
+
+    const keys = [key1, key2, key3];
+    const expected = [user1, user2, user3];
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const expectedError = new Error();
+    const promiseTimeout = sinon.stub(cache, 'promiseTimeout');
+    promiseTimeout.throws(expectedError);
+
+    let actualError, result;
+
+    try {
+        result = await cache.tryGetBatch(keys, fallback, {
+            timeout: 1000,
+            throwOnError: false,
+        });
+    } catch (error) {
+        actualError = error;
+    }
+
+    t.ok(result, `result is defined`);
+    t.notOk(actualError, 'should not throw error');
+    t.equals(result.$error, expectedError, 'promiseTimeout returns error value');
+
+    await cache.client.flushall();
+
+    t.end();
+});
+
 test('CacheClientBatch: "tryGetBatch" should handle "setBatch" errors', async t => {
     const user1 = { user: 1, name: 'user1' };
     const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
@@ -641,6 +772,27 @@ test('CacheClient: hashKeyBatch should not hash UUIDs', t => {
 
     const result = cache.hashKeyBatch(keys);
     t.deepEquals(result, expected, `batch keys`);
+
+    t.end();
+});
+
+
+test('CacheClientBatch: "areHashKeys" should check keys', async t => {
+    const cache = new CacheClientBatch({
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    const keys = [
+        'cache:cfe599a8705981bc9d8cf136591adfsf',
+        'cache:cfe599a8705981bc9d8cf136591e66bf'
+    ];
+
+    let result = cache.areHashKeys(keys);
+
+    t.ok(result, 'should not throw with ok arguments');
+
+    await cache.client.flushall();
 
     t.end();
 });
