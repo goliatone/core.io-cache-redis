@@ -7,8 +7,7 @@ declare class CacheClient {
         ttlInSeconds: boolean;
         clientConnectionTimeout: number;
         lastError: any;
-        errors: any[];
-        createClient: typeof import("./lib/createClient");
+        createClient: typeof import("./createClient");
         hashKeys: boolean;
         defaultCacheKeyPrefix: string;
         cacheKeyPrefix: string;
@@ -35,7 +34,9 @@ declare class CacheClient {
     });
     init(config?: {}): void;
     initialized: boolean;
+    errors: any[];
     client: any;
+    testConnection(timeout?: any):Promise<any>;
     /**
      * Get object related to `key` if present, if cache miss
      * we run `fallback` and cache the value returned from that.
@@ -57,8 +58,8 @@ declare class CacheClient {
      * @returns {Promise}
      */
     tryGet(key: string, fallback: (key: string) => any, options?: {
-        ttl?: Int;
-        timeout: Int;
+        ttl?: number;
+        timeout: number;
         deserialize?: Function | boolean;
         serialize?: Function;
         addTimestamp?: boolean;
@@ -75,7 +76,7 @@ declare class CacheClient {
      * @param {Boolean} [options.buffer=false] Get key as binary data
      * @returns {Promise}
      */
-    get(key: string, def: Any, options?: {
+    get(key: string, def: any, options?: {
         deserialize?: boolean;
         buffer?: boolean;
     }): Promise<any>;
@@ -88,7 +89,7 @@ declare class CacheClient {
      * @returns {Promise}
      */
     set(key: string, value: any | string, options?: {
-        ttl?: Int;
+        ttl?: number;
     }): Promise<any>;
     /**
      * Remove key from cache.
@@ -122,13 +123,13 @@ declare class CacheClient {
      * cache.purgeKeys('cache:*');
      * ```
      * @param {String} match Pattern to match
-     * @param {Integer} count Number of keys per cycle
+     * @param {Int} count Number of keys per cycle
      * @returns {Promise}
      */
-    purgeKeys(match?: string, count?: Integer): Promise<any>;
-    shouldQueryCache(key: any, options?: {}): any;
+    purgeKeys(match?: string, count?: number): Promise<any>;
+    shouldQueryCache(key: any, options?: {}): boolean;
     get timeUnit(): "EX" | "PX";
-    handleError(error: any, label: any): void;
+    handleError(error: any, label?: string): void;
     lastError: any;
 }
 declare namespace CacheClient {
