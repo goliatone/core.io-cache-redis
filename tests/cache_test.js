@@ -1,7 +1,8 @@
 'use strict';
 const test = require('tape');
 const sinon = require('sinon');
-const { CacheClient, CacheClientError } = require('..');
+const CacheClient = require('../lib/cache');
+const { CacheClientError } = require('../lib/errors');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
 
