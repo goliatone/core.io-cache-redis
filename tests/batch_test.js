@@ -1,11 +1,10 @@
 'use strict';
 const test = require('tape');
 const sinon = require('sinon');
-const { CacheClientBatch, CacheClientError } = require('..');
+const CacheClientBatch = require('../lib/cacheBatch');
+const { CacheClientError } = require('../lib/errors');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
-
-const fixtures = {};
 
 test('CacheClientBatch: "tryGetBatch" should use fallback when key not in cache', async t => {
     const user1 = { user: 1, name: 'user1' };
