@@ -3,6 +3,7 @@ const test = require('tape');
 const sinon = require('sinon');
 const CacheClient = require('../lib/cache');
 const { CacheClientError } = require('../lib/errors');
+const { UUID_CACHE_MATCHER } = require('..');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
 
@@ -38,7 +39,7 @@ test('CacheClient: "tryGet" should use cache when key is found', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -67,7 +68,7 @@ test('CacheClient: "tryGet" should skip cache if "shouldQueryCache" returns `fal
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         shouldQueryCache(key, options) {
             return false;
@@ -107,7 +108,7 @@ test('CacheClient: "tryGet" call fallback if "forceCacheMiss" is `true`', async 
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -144,7 +145,7 @@ test('CacheClient: "tryGet" should use cache if "forceCacheMiss" is `false`', as
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -186,7 +187,7 @@ test('CacheClient: "tryGet" should call fallback if "forceCacheMiss" function re
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -302,7 +303,7 @@ test('CacheClient: "tryGet" should handle "promiseTimeout" thrown errors', async
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         promiseTimeout,
         createClient: () => new Redis()
@@ -339,7 +340,7 @@ test('CacheClient: "tryGet" should handle "get" thrown errors', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -377,7 +378,7 @@ test('CacheClient: "tryGet" should handle "get" returned errors', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -418,7 +419,7 @@ test('CacheClient: "tryGet" "promiseTimeout" should throw errors if throwOnError
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         promiseTimeout,
         createClient: () => new Redis()
@@ -449,7 +450,7 @@ test('CacheClient: "tryGet" should return errors if `throwOnError=false`', async
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -486,7 +487,7 @@ test('CacheClient: "tryGet" should handle "get" thrown errors', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -525,7 +526,7 @@ test('CacheClient: "tryGet" should call "promiseTimeout" if timeout is set', asy
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         promiseTimeout,
         createClient: () => new Redis()
@@ -555,7 +556,7 @@ test('CacheClient: "get" should return value', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -581,7 +582,7 @@ test('CacheClient: "get" should return value if we use full key', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -607,7 +608,7 @@ test('CacheClient: "get" should return string if "deserialize" is `false`', asyn
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -633,7 +634,7 @@ test('CacheClient: "get" should return default value if key not found', async t 
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({ data: {} });
@@ -656,7 +657,7 @@ test('CacheClient: "get" should handle deserialize boolean values', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -687,7 +688,7 @@ test('CacheClient: "get" should handle deserialize as object values', async t =>
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -717,7 +718,7 @@ test('CacheClient: "set" should set a value we can retrieve with "get"', async t
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -741,7 +742,7 @@ test('CacheClient: "set" should use a default TTL value', async t => {
     const cache = new CacheClient({
         defaultTTL,
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -765,7 +766,7 @@ test('CacheClient: "set" should use given TTL argument', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -789,7 +790,7 @@ test('CacheClient: "set" should use "serialize" function for object values', asy
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -817,7 +818,7 @@ test('CacheClient: "get" and "set" should handle custom serialize and deserializ
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -855,7 +856,7 @@ test('CacheClient: "get" and "set" should handle buffer data', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -891,7 +892,7 @@ test('CacheClient: "del" should delete a value', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: function() {
             return new Redis({
@@ -998,7 +999,7 @@ test('CacheClient: isHashKey should use keySerializer for non string keys', t =>
 test('CacheClient: isHashKey should identify valid cache keys using custom pattern', t => {
 
     const cache = new CacheClient({
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -1044,7 +1045,7 @@ test('CacheClient: hashKey should not hash UUIDs', t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -1163,7 +1164,7 @@ test('CacheClient: "get" errors should be handled by "handleError"', async t => 
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -1200,7 +1201,7 @@ test('CacheClient: "set" errors should be handled by "handleError"', async t => 
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
@@ -1237,7 +1238,7 @@ test('CacheClient: `throwOnError=false` should return error value', async t => {
 
     const cache = new CacheClient({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClient.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
