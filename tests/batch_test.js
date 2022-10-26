@@ -2,6 +2,7 @@
 const test = require('tape');
 const sinon = require('sinon');
 const CacheClientBatch = require('../lib/cacheBatch');
+const { UUID_CACHE_MATCHER } = require('..');
 const { CacheClientError } = require('../lib/errors');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
@@ -19,7 +20,7 @@ test('CacheClientBatch: "tryGetBatch" should use fallback when key not in cache'
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -55,7 +56,7 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for keys not in cache', 
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -95,7 +96,7 @@ test('CacheClientBatch: "tryGetBatch" should use "promiseTimeout" if timeout is 
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -134,7 +135,7 @@ test('CacheClientBatch: "tryGetBatch" should use "promiseTimeout" should throw 4
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -179,7 +180,7 @@ test('CacheClientBatch: "tryGetBatch" should use "promiseTimeout" return error v
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -226,7 +227,7 @@ test('CacheClientBatch: "tryGetBatch" should handle "setBatch" errors', async t 
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -276,7 +277,7 @@ test('CacheClientBatch: "tryGetBatch" should return error value from "setBatch" 
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -325,7 +326,7 @@ test('CacheClientBatch: "tryGetBatch" should add _cachedOn timestamp to record',
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -362,7 +363,7 @@ test('CacheClientBatch: "tryGetBatch" should add _cachedOn timestamp to record',
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -400,7 +401,7 @@ test('CacheClientBatch: "tryGetBatch" should add cachedOn timestamp to legacy re
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -437,7 +438,7 @@ test('CacheClientBatch: "tryGetBatch" should return keys from cache', async t =>
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: JSON.stringify(user1),
@@ -482,7 +483,7 @@ test('CacheClientBatch: "getBatch" should return default values for things not i
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: JSON.stringify(user1)
@@ -515,7 +516,7 @@ test('CacheClientBatch: "getBatch" should handle buffer data', async t => {
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: Buffer.from(JSON.stringify(user1)).toString('utf-8'),
@@ -558,7 +559,7 @@ test('CacheClientBatch: "setBatch" should serialize all values', async t => {
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -614,7 +615,7 @@ test('CacheClientBatch: "setBatch" should use custom serialize', async t => {
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis()
     });
 
@@ -685,7 +686,7 @@ test('CacheClientBatch: "delBatch" should delete batch of keys', async t => {
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: JSON.stringify(user1),
@@ -719,7 +720,7 @@ test('CacheClientBatch: "delBatch" should delete batch of keys', async t => {
     const cache = new CacheClientBatch({
         hashUUIDs: false,
         logger: noopConsole(),
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: JSON.stringify(user1),
@@ -750,7 +751,7 @@ test('CacheClient: hashKeyBatch should not hash UUIDs', t => {
 
     const cache = new CacheClientBatch({
         hashUUIDs: false,
-        cacheKeyMatcher: CacheClientBatch.UUID_CACHE_MATCHER,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
