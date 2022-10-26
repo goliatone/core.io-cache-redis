@@ -133,7 +133,6 @@ declare class CacheClient {
     lastError: any;
 }
 declare namespace CacheClient {
-    export { defaults };
-    export const UUID_CACHE_MATCHER: RegExp;
+    export { options };
 }
-import { defaults } from "./defaults";
+import { options } from "./defaults";

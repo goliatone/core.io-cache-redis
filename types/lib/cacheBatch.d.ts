@@ -39,7 +39,7 @@ declare class BatchCacheClient extends CacheClient {
     areHashKeys(keys: any, options?: {}): boolean[];
 }
 declare namespace BatchCacheClient {
-    export { UUID_CACHE_MATCHER, GetBatchOptions };
+    export { GetBatchOptions };
 }
 import CacheClient = require("./cache");
 /**
