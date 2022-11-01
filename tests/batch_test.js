@@ -83,7 +83,6 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for keys not in cache', 
     t.end();
 });
 
-
 test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cache', async t => {
     const user1 = { user: 1, name: 'user1' };
     const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
@@ -124,6 +123,51 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cac
     t.ok(fallback.calledOnce, 'fallback should have been called once');
     t.ok(fallback.calledWith(setKeys), 'fallback should have been with raw key');
     t.ok(setBatch.calledWith(setKeys, setValues), 'setBatch should have been called');
+
+    setBatch.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" should not "setBatch" if all keys in cache', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        createClient: () => new Redis({
+            data: {
+                [`cache:${key1}`]: JSON.stringify(user1),
+                [`cache:${key2}`]: JSON.stringify(user2),
+                [`cache:${key3}`]: JSON.stringify(user3),
+            }
+        })
+    });
+
+    const keys = [key1, key2, key3];
+    const expected = [user1, user2, user3];
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const setBatch = sinon.spy(cache, 'setBatch');
+
+    const result = await cache.tryGetBatch(keys, fallback, {
+        addTimestamp: false
+    });
+
+    t.deepEquals(result, expected, `result is expected object`);
+    t.ok(fallback.notCalled, 'fallback should not have been called');
+    t.ok(setBatch.notCalled, 'setBatch should have not been called');
 
     setBatch.restore();
     await cache.client.flushall();
@@ -438,7 +482,6 @@ test('CacheClientBatch: "tryGetBatch" should add _cachedOn timestamp to record',
     });
 
     for (const user of result) {
-        console.log(user);
         t.ok(user._cachedOn, 'should have cache');
     }
 
@@ -475,7 +518,6 @@ test('CacheClientBatch: "tryGetBatch" should add _cachedOn timestamp to record',
     });
 
     for (const user of result) {
-        console.log(user);
         t.ok(user._cachedOn, 'should have cache');
     }
 
@@ -483,7 +525,6 @@ test('CacheClientBatch: "tryGetBatch" should add _cachedOn timestamp to record',
 
     t.end();
 });
-
 
 test('CacheClientBatch: "tryGetBatch" should add cachedOn timestamp to legacy records', async t => {
     const user1 = { user: 1, name: 'user1', cachedOn: Date.now() };
