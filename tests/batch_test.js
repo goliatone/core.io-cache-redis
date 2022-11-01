@@ -21,6 +21,7 @@ test('CacheClientBatch: "tryGetBatch" should use fallback when key not in cache'
         hashUUIDs: false,
         logger: noopConsole(),
         cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
         createClient: () => new Redis()
     });
 
@@ -30,9 +31,7 @@ test('CacheClientBatch: "tryGetBatch" should use fallback when key not in cache'
     const fallback = sinon.stub();
     fallback.returns(expected);
 
-    const result = await cache.tryGetBatch(keys, fallback, {
-        addTimestamp: false
-    });
+    const result = await cache.tryGetBatch(keys, fallback);
 
     t.deepEquals(result, expected, `result is expected object`);
     t.ok(fallback.calledOnce, 'fallback should have been called once');
@@ -57,6 +56,7 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for keys not in cache', 
         hashUUIDs: false,
         logger: noopConsole(),
         cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
         createClient: () => new Redis()
     });
 
@@ -68,9 +68,7 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for keys not in cache', 
 
     const setBatch = sinon.spy(cache, 'setBatch');
 
-    const result = await cache.tryGetBatch(keys, fallback, {
-        addTimestamp: false
-    });
+    const result = await cache.tryGetBatch(keys, fallback);
 
     t.deepEquals(result, expected, `result is expected object`);
     t.ok(fallback.calledOnce, 'fallback should have been called once');
@@ -97,6 +95,7 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cac
         hashUUIDs: false,
         logger: noopConsole(),
         cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: JSON.stringify(user1)
@@ -115,9 +114,7 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cac
 
     const setBatch = sinon.spy(cache, 'setBatch');
 
-    const result = await cache.tryGetBatch(keys, fallback, {
-        addTimestamp: false
-    });
+    const result = await cache.tryGetBatch(keys, fallback);
 
     t.deepEquals(result, expected, `result is expected object`);
     t.ok(fallback.calledOnce, 'fallback should have been called once');
@@ -192,6 +189,7 @@ test('CacheClientBatch: "tryGetBatch" should not "setBatch" if all keys in cache
         hashUUIDs: false,
         logger: noopConsole(),
         cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
         createClient: () => new Redis({
             data: {
                 [`cache:${key1}`]: JSON.stringify(user1),
@@ -209,9 +207,7 @@ test('CacheClientBatch: "tryGetBatch" should not "setBatch" if all keys in cache
 
     const setBatch = sinon.spy(cache, 'setBatch');
 
-    const result = await cache.tryGetBatch(keys, fallback, {
-        addTimestamp: false
-    });
+    const result = await cache.tryGetBatch(keys, fallback);
 
     t.deepEquals(result, expected, `result is expected object`);
     t.ok(fallback.notCalled, 'fallback should not have been called');
@@ -602,7 +598,6 @@ test('CacheClientBatch: "tryGetBatch" should add cachedOn timestamp to legacy re
     });
 
     for (const user of result) {
-        console.log(user);
         t.ok(user.cachedOn, 'should have cache');
     }
 
