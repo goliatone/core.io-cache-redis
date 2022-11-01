@@ -1406,3 +1406,51 @@ test('CacheClient: `purgeKeys` error should call handleError', async t => {
 
     t.end();
 });
+
+test('CacheClient: "tryGet" should respect tryGetOptions', async t => {
+    const expected = { user: 1, name: 'pepe' };
+    const key = '54b798c8-2107-4641-817d-9a5212632c37';
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        tryGetOptions: {
+            addTimestamp: false,
+            throwOnError: true,
+            forceCacheMiss: true,
+        },
+        createClient: function() {
+            return new Redis({
+                data: {
+                    [`cache:${key}`]: JSON.stringify(expected)
+                }
+            });
+        }
+    });
+
+    let params;
+    const _old = cache.shouldQueryCache;
+    cache.shouldQueryCache = (key, options) => {
+        params = options;
+        return _old(key, options);
+    };
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const result = await cache.tryGet(key, fallback, {
+        forceCacheMiss: false,
+    });
+
+
+    t.deepEquals(result, expected, `result is expected value`);
+
+    t.equal(params.addTimestamp, false, 'should set addTimestamp');
+    t.equal(params.throwOnError, true, 'should set throwOnError');
+    t.equal(params.forceCacheMiss, false, 'should set forceCacheMiss');
+
+    await cache.client.flushall();
+
+    t.end();
+});
