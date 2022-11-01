@@ -128,6 +128,74 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cac
 });
 
 test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cache', async t => {
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+    const user1 = { id: key1, user: 1, name: 'user1' };
+
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+    const user2 = { id: key2, user: 2, name: 'user2' };
+
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+    const user3 = { id: key3, user: 3, name: 'user3' };
+
+    const users = [user1, user2, user3];
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
+        createClient: () => new Redis()
+    });
+
+    const expected = {
+        case1: {
+            keys: [key1, key2, key3],
+            result: [user1, user2, user3],
+        },
+        case2: {
+            keys: [key1, key1],
+            result: [user1, user1],
+        },
+        case3: {
+            keys: [key3, key2, key1],
+            result: [user3, user2, user1],
+        },
+        case4: {
+            keys: [key3],
+            result: [user3],
+        }
+    };
+
+    const fallback = sinon.stub();
+    fallback.callsFake(keys => {
+        return users.filter(item => keys.includes(item.id))
+    });
+
+    const setBatch = sinon.spy(cache, 'setBatch');
+    let result;
+
+    await cache.set(key1, user1);
+    result = await cache.tryGetBatch(expected.case1.keys, fallback);
+    t.deepEquals(result, expected.case1.result, `result is expected object`);
+
+    await cache.delBatch(key2);
+    result = await cache.tryGetBatch(expected.case2.keys, fallback);
+    t.deepEquals(result, expected.case2.result, `result is expected object`);
+
+    await cache.del([key2, key3]);
+    result = await cache.tryGetBatch(expected.case3.keys, fallback);
+    t.deepEquals(result, expected.case3.result, `result is expected object`);
+
+    result = await cache.tryGetBatch(expected.case4.keys, fallback);
+    t.deepEquals(result, expected.case4.result, `result is expected object`);
+
+    setBatch.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cache', async t => {
     const user1 = { user: 1, name: 'user1' };
     const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
 
