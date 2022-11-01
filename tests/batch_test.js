@@ -313,6 +313,55 @@ test('CacheClientBatch: "tryGetBatch" should return error value from "setBatch" 
     t.end();
 });
 
+test('CacheClientBatch: "tryGetBatch" should return error value from "setBatch" error', async t => {
+    const user1 = { user: 1, name: 'user1' };
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+
+    const user2 = { user: 2, name: 'user2' };
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const user3 = { user: 3, name: 'user3' };
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        createClient: () => new Redis()
+    });
+
+    const keys = [key1, key2, key3];
+    const expected = [user1, user2, user3];
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    let actualError;
+    const expectedError = new Error();
+    const setBatch = sinon.stub(cache, 'setBatch');
+    setBatch.throws(expectedError);
+
+    let result;
+
+    try {
+        result = await cache.tryGetBatch(keys, fallback, {
+            throwOnError: false
+        });
+    } catch (error) {
+        actualError = error;
+    }
+
+    t.ok(fallback.calledOnce, 'fallback should have been called once');
+    t.ok(fallback.calledWith(keys), 'fallback should have been with raw key');
+    t.ok(setBatch.calledWith(keys, expected), 'setBatch should have been called');
+    t.equals(result.$error, expectedError, 'should handle thrown errors');
+
+    setBatch.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
 test('CacheClientBatch: "tryGetBatch" should add _cachedOn timestamp to record', async t => {
     const user1 = { user: 1, name: 'user1' };
     const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
