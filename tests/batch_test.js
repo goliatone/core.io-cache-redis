@@ -6,6 +6,7 @@ const { UUID_CACHE_MATCHER } = require('..');
 const { CacheClientError } = require('../lib/errors');
 const noopConsole = require('noop-console');
 const Redis = require('ioredis-mock');
+const { arraysEqual } = require('./utils');
 
 test('CacheClientBatch: "tryGetBatch" should use fallback when key not in cache', async t => {
     const user1 = { user: 1, name: 'user1' };
@@ -216,6 +217,121 @@ test('CacheClientBatch: "tryGetBatch" should use fallback if forceCacheMiss true
     t.ok(fallback.calledOnce, 'fallback should have been called once');
     t.ok(fallback.calledWith(requestedKeys), 'fallback should have been with raw key');
     t.ok(setBatch.calledWith(requestedKeys, expected), 'setBatch should have been called');
+
+    setBatch.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" return expected values', async t => {
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+    const user1 = { id: key1, user: 1, name: 'user1' };
+
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+    const user2 = { id: key2, user: 2, name: 'user2' };
+
+    const key3 = '877fc553-0c31-49f0-b5b9-7beda30017d8';
+    const user3 = { id: key3, user: 3, name: 'user3' };
+
+    const keys = [key1, key2, key3];
+    const users = [user1, user2, user3];
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
+        createClient: () => new Redis({
+            data: {
+                [`cache:${key1}`]: JSON.stringify(user1)
+            }
+        })
+    });
+
+    const fallback = sinon.stub();
+    fallback.callsFake(keys => {
+        return keys.map(id => users.find(u => u.id === id) || null);
+    });
+
+    const setBatch = sinon.spy(cache, 'setBatch');
+
+    const key0 = '00000000-0000-0000-0000-000000000000';
+    const user0 = null;
+    const expected = [...users, user0];
+
+    const requestedKeys = [...keys, key0];
+
+    const result = await cache.tryGetBatch(requestedKeys, fallback, {
+        forceCacheMiss: true
+    });
+
+    t.deepEquals(result, expected, `result is expected object`);
+    t.ok(fallback.calledOnce, 'fallback should have been called once');
+    t.ok(fallback.calledWith(requestedKeys), 'fallback should have been with raw key');
+    t.ok(setBatch.calledWith(requestedKeys, expected), 'setBatch should have been called');
+
+    setBatch.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" return expected values', async t => {
+    const key1 = 'id1';
+    const user1 = { id: key1, name: 'user1' };
+
+    const key2 = 'id2';
+    const user2 = { id: key2, name: 'user2' };
+
+    const key3 = 'id3';
+    const user3 = { id: key3, name: 'user3' };
+
+    const key4 = 'id4';
+    const user4 = { id: key4, name: 'user4' };
+
+    const keys = [key1, key2, key3, key4];
+    const users = [user1, user2, user3, user4];
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        tryGetOptions: { addTimestamp: false },
+        createClient: () => new Redis({
+            data: {
+                [`cache:${key1}`]: JSON.stringify(user1)
+            }
+        })
+    });
+
+    const fallback = sinon.stub();
+
+    //Non deterministic response from service
+    fallback.callsFake(keys => {
+        return keys
+            .map(id => ({ id, s: Math.random() }))
+            .sort((a, b) => a.s - b.s)
+            .map(({ id }) => users.find(u => u.id === id) || null);
+    });
+
+    const setBatch = sinon.spy(cache, 'setBatch');
+
+    const key0 = 'id0';
+    const user0 = null;
+    const expected = [...users, user0, user4];
+
+    const requestedKeys = [...keys, key0, key4];
+
+    const result = await cache.tryGetBatch(requestedKeys, fallback, {
+        forceCacheMiss: true
+    });
+
+    t.ok(arraysEqual(result, expected), `result is expected object`);
+
+    t.ok(fallback.calledOnce, 'fallback should have been called once');
+    t.ok(fallback.calledWith(requestedKeys), 'fallback should have been with raw key');
+    t.ok(setBatch.calledOnce, 'setBatch should have been called');
 
     setBatch.restore();
     await cache.client.flushall();
