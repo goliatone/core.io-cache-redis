@@ -380,7 +380,6 @@ test('CacheClientBatch: "tryGetBatch" should "setBatch" for some keys not in cac
 
     const fallback = sinon.stub();
     fallback.callsFake(keys => {
-        console.log('keys', keys);
         return users.filter(item => keys.includes(item.id))
     });
 
