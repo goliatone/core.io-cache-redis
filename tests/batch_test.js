@@ -1103,26 +1103,26 @@ test('CacheClientBatch: "setBatch" should throw if invalid arguments', async t =
     });
 
     try {
-        cache.setBatch();
+        await cache.setBatch();
     } catch (error) {
         t.ok(error, 'should throw with invalid arguments');
     }
 
     try {
-        cache.setBatch('key');
+        await cache.setBatch('key');
     } catch (error) {
         t.ok(error, 'should throw with invalid arguments');
     }
 
     try {
-        cache.setBatch(['key'], 'value');
+        await cache.setBatch(['key'], 'value');
     } catch (error) {
         t.ok(error, 'should throw with invalid arguments');
     }
 
     let expectedError;
     try {
-        cache.setBatch(['key'], ['value']);
+        await cache.setBatch(['key'], ['value']);
     } catch (error) {
         expectedError = error;
     }
@@ -1212,27 +1212,28 @@ test('CacheClient: hashKeyBatch should not hash UUIDs', t => {
 
     const cache = new CacheClientBatch({
         hashUUIDs: false,
-        cacheKeyMatcher: UUID_CACHE_MATCHER,
         logger: noopConsole(),
         createClient: () => new Redis()
     });
 
     let keys = [
-        'adfadfa',
+        'getAllRecords:[0-100]',
         '0c19caba-aad2-4e64-b644-a2a546528912',
         'cache:0c19caba-aad2-4e64-b644-a2a546528912',
-        'sample-raw-key',
+        'cache:user:688e9ef9-6592-4543-bbe3-f66d2716aca0:profile'
     ];
 
     let expected = [
-        'cache:9c9003d48dc9a1ee2bd97749db6c7cc7',
+        'cache:5f53a329ca71b0a130e07b96b15ca8af',
         'cache:0c19caba-aad2-4e64-b644-a2a546528912',
         'cache:0c19caba-aad2-4e64-b644-a2a546528912',
-        'cache:69d9380fbea522ce22fa5bc88be74a8a'
+        'cache:user:688e9ef9-6592-4543-bbe3-f66d2716aca0:profile'
     ];
 
     const result = cache.hashKeyBatch(keys);
-    t.deepEquals(result, expected, `batch keys`);
+    for (const i in result) {
+        t.deepEquals(result[i], expected[i], `${result[i]} = ${expected[i]}`);
+    }
 
     t.end();
 });
