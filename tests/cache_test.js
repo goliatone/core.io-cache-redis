@@ -925,17 +925,17 @@ test('CacheClient: isHashKey should identify valid cache keys using default patt
     });
 
     let keys = [{
-        key: 'adfadfa',
+        key: 'getAllRecords:[0-100]',
         expected: false,
     }, {
         key: '0c19caba-aad2-4e64-b644-a2a546528912',
         expected: false
     }, {
         key: 'cache:0c19caba-aad2-4e64-b644-a2a546528912',
-        expected: false
+        expected: true
     }, {
         key: 'cache:cfe599a8705981bc9d8cf136591',
-        expected: false
+        expected: true
     }, {
         key: 'cache:cfe599a8705981bc9d8cf136591e66bf',
         expected: true
@@ -966,17 +966,17 @@ test('CacheClient: isHashKey should use keySerializer for non string keys', t =>
     });
 
     let keys = [{
-        keyObject: { id: 'adfadfa' },
+        keyObject: { id: 'MWMxNTNlNzMzMzNmOGM0YWMwNDg3NGM1NjQ0MzEzNjQ=' },
         expected: false,
     }, {
         keyObject: { id: '0c19caba-aad2-4e64-b644-a2a546528912' },
         expected: false
     }, {
         keyObject: { id: 'cache:0c19caba-aad2-4e64-b644-a2a546528912' },
-        expected: false
+        expected: true
     }, {
         keyObject: { id: 'cache:cfe599a8705981bc9d8cf136591' },
-        expected: false
+        expected: true
     }, {
         keyObject: { id: 'cache:cfe599a8705981bc9d8cf136591e66bf' },
         expected: true
