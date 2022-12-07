@@ -550,7 +550,7 @@ test('CacheClient: "tryGet" should call "promiseTimeout" if timeout is set', asy
     t.end();
 });
 
-test.only('CacheClient: "tryGet" should return empty values', async t => {
+test('CacheClient: "tryGet" should return empty values', async t => {
     const expected = undefined;
     const key = '62dd0765-ad4b-4c65-b7a1-6a82c07da45a';
 
