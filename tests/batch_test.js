@@ -923,9 +923,47 @@ test('CacheClientBatch: "tryGetBatch" should return keys from cache', async t =>
 
     t.deepEquals(result, expected, `result is expected object`);
     t.ok(fallback.notCalled, 'fallback should not have been called');
-    t.ok(getBatch.calledOnce, 'getBatch should not have been called');
+    t.ok(getBatch.calledOnce, 'getBatch should have been called');
 
     getBatch.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
+test('CacheClientBatch: "tryGetBatch" should return empty values array', async t => {
+    const key1 = '70d6e4c7-4da7-4bc9-9ecd-53e0c06a22ef';
+    const key2 = 'b6fdfba9-d8f9-40a2-a2a7-51fc34dddffc';
+
+    const cache = new CacheClientBatch({
+        hashUUIDs: false,
+        logger: noopConsole(),
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        createClient: () => new Redis({
+            data: {}
+        })
+    });
+
+    const keys = [key1, key2];
+    const expected = [];
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const getBatch = sinon.spy(cache, 'getBatch');
+    const setBatch = sinon.spy(cache, 'setBatch');
+
+    const result = await cache.tryGetBatch(keys, fallback, {
+        addTimestamp: false
+    });
+
+    t.deepEquals(result, expected, `result is expected object`);
+    t.ok(fallback.calledOnce, 'fallback should have been called once');
+    t.ok(getBatch.calledOnce, 'getBatch should have been called once');
+    t.ok(setBatch.notCalled, 'setBatch should have been called once');
+
+    getBatch.restore();
+    setBatch.restore();
     await cache.client.flushall();
 
     t.end();

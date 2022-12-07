@@ -550,6 +550,37 @@ test('CacheClient: "tryGet" should call "promiseTimeout" if timeout is set', asy
     t.end();
 });
 
+test.only('CacheClient: "tryGet" should return empty values', async t => {
+    const expected = undefined;
+    const key = '62dd0765-ad4b-4c65-b7a1-6a82c07da45a';
+
+
+    const cache = new CacheClient({
+        hashUUIDs: false,
+        cacheKeyMatcher: UUID_CACHE_MATCHER,
+        logger: noopConsole(),
+        createClient: () => new Redis()
+    });
+
+    const fallback = sinon.stub();
+    fallback.returns(expected);
+
+    const set = sinon.spy(cache, 'set');
+
+    const result = await cache.tryGet(key, fallback, {
+        addTimestamp: false,
+    });
+
+    t.deepEquals(result, expected, `result is expected value`);
+    t.ok(fallback.calledOnce, 'fallback should have been called once');
+    t.ok(set.notCalled, 'set should have been called once');
+
+    set.restore();
+    await cache.client.flushall();
+
+    t.end();
+});
+
 test('CacheClient: "get" should return value', async t => {
     const expected = { user: 1, name: 'pepe' };
     const key = '90dc29f8-027b-4fec-a011-ab07af159f5b';
